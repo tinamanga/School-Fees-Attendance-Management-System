@@ -17,14 +17,17 @@ def create_app():
     migrate.init_app(app, db)
     CORS(app)
 
-    from app.routes.students import students_bp
-    from app.routes.attendance import attendance_bp
-    from app.routes.fees import fees_bp
+    from .routes.students import students_bp
+    from .routes.attendance import attendance_bp
+    from .routes.fees import fees_bp
 
     app.register_blueprint(students_bp, url_prefix="/students")
     app.register_blueprint(attendance_bp, url_prefix="/attendance")
     app.register_blueprint(fees_bp, url_prefix="/fees")
 
+    from . import models
     return app
-if __name__=='__main__':
+
+if __name__ == '__main__':
+    app = create_app()
     app.run(debug=True)
