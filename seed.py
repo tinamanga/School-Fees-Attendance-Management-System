@@ -1,4 +1,4 @@
-from app import create_app
+from app import app
 from models import db, User, Classroom, Student, AttendanceRecord, FeePayment
 from faker import Faker
 from werkzeug.security import generate_password_hash
@@ -6,7 +6,6 @@ from datetime import date, timedelta
 import random
 
 fake = Faker()
-app = create_app()
 
 with app.app_context():
 
