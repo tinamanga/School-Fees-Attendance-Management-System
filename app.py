@@ -3,6 +3,7 @@ from flask_migrate import Migrate
 from werkzeug.security import check_password_hash
 from datetime import date
 from models import db, User, Student, Classroom, AttendanceRecord, FeePayment
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///school.db'
@@ -10,6 +11,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 migrate = Migrate(app, db)
+CORS(app)
 
 @app.route('/')
 def welcome():
