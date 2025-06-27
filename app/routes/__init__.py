@@ -100,19 +100,9 @@ def get_student(id):
         ]
     })
 
-
 @routes.route("/students", methods=["POST"])
 def create_student():
     data = request.get_json()
-
-    new_student = Student(
-        name=data["name"],
-        guardian_name=data["guardian_name"],
-        guardian_contact=data["guardian_contact"],
-        classroom_id=data["classroom_id"]
-    )
-    db.session.add(new_student)
-    db.session.flush()
 
     username = data["name"].lower().replace(" ", "_")
     existing_user = User.query.filter_by(username=username).first()
@@ -129,6 +119,16 @@ def create_student():
         role="student"
     )
     db.session.add(new_user)
+    db.session.flush()  # Now new_user.id is available
+
+    new_student = Student(
+        name=data["name"],
+        guardian_name=data["guardian_name"],
+        guardian_contact=data["guardian_contact"],
+        classroom_id=data["classroom_id"],
+        user_id=new_user.id  # ✅ user_id is now set correctly
+    )
+    db.session.add(new_student)
     db.session.commit()
 
     return jsonify({
@@ -137,6 +137,7 @@ def create_student():
         "login_username": username,
         "default_password": "student123"
     }), 201
+
 
 
 @routes.route("/students/<int:id>", methods=["PATCH"])
