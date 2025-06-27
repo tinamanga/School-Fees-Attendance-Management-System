@@ -1,85 +1,117 @@
-from app import app
-from models import db, User, Classroom, Student, AttendanceRecord, FeePayment
-from faker import Faker
-from werkzeug.security import generate_password_hash
-from datetime import date, timedelta
-import random
+# seed.py
 
-fake = Faker()
+from datetime import date, timedelta
+from app import create_app, db, bcrypt
+from app.models import User, Classroom, Student, AttendanceRecord, FeePayment
+
+app = create_app()
 
 with app.app_context():
+    print("🔄 Initializing database...")
+    db.create_all()
 
-    AttendanceRecord.query.delete()
-    FeePayment.query.delete()
-    Student.query.delete()
-    Classroom.query.delete()
-    User.query.delete()
-    print("Cleared all tables")
+    # 1. Create Admin
+    admin = User.query.filter_by(username="admin").first()
+    if not admin:
+        admin = User(
+            username="admin",
+            email="admin@school.com",
+            role="admin",
+            password=bcrypt.generate_password_hash("admin123").decode("utf-8")
+        )
+        db.session.add(admin)
+        print("✅ Admin user created.")
+    else:
+        print("ℹ️ Admin already exists.")
 
-    admin = User(username="admin", email="admin@example.com", password=generate_password_hash("admin123"), role="admin")
-    db.session.add(admin)
-
-    teachers = []
-    for i in range(3):
+    # 2. Create Teacher
+    teacher = User.query.filter_by(username="teacher1").first()
+    if not teacher:
         teacher = User(
-            username=f"teacher{i+1}",
-            email=f"teacher{i+1}@school.com",
-            password=generate_password_hash("teach123"),
-            role="teacher"
+            username="teacher1",
+            email="teacher1@school.com",
+            role="teacher",
+            password=bcrypt.generate_password_hash("teacher123").decode("utf-8")
         )
-        teachers.append(teacher)
         db.session.add(teacher)
+        print("✅ Teacher user created.")
+    else:
+        print("ℹ️ Teacher already exists.")
 
-    db.session.commit()
-    print("Seeded admin and 3 teachers")
-
-    classrooms = []
-    for label in ["A", "B", "C"]:
-        classroom = Classroom(name=f"Class {label}")
-        classrooms.append(classroom)
+    # 3. Create Classroom
+    classroom = Classroom.query.filter_by(name="Grade 1").first()
+    if not classroom:
+        classroom = Classroom(name="Grade 1")
         db.session.add(classroom)
+        db.session.flush()
+        print("✅ Classroom 'Grade 1' created.")
+    else:
+        print("ℹ️ Classroom 'Grade 1' already exists.")
 
-    db.session.commit()
-    print(" Seeded 3 classrooms")
-
-    students = []
-    for i in range(20):
-        student = Student(
-            name=fake.name(),
-            classroom_id=random.choice(classrooms).id,
-            guardian_name=fake.name(),
-            guardian_contact=fake.phone_number()
+    # 4. Create Student and Link to User
+    student_user = User.query.filter_by(username="student1").first()
+    if not student_user:
+        student_user = User(
+            username="student1",
+            email="student1@school.com",
+            role="student",
+            password=bcrypt.generate_password_hash("student123").decode("utf-8")
         )
-        students.append(student)
+        db.session.add(student_user)
+        db.session.flush()
+
+        student = Student(
+            name="Student One",
+            guardian_name="Guardian A",
+            guardian_contact="0712345678",
+            classroom_id=classroom.id,
+            user_id=student_user.id
+        )
         db.session.add(student)
-
-    db.session.commit()
-    print(" Seeded 20 students")
-
-    for student in students:
-        for j in range(5):
-            attendance = AttendanceRecord(
-                student_id=student.id,
-                teacher_id=random.choice(teachers).id,
-                date=date.today() - timedelta(days=j),
-                status=random.choice(["Present", "Absent"])
+        db.session.flush()
+        print("✅ Student user and profile created.")
+    else:
+        student = Student.query.filter_by(user_id=student_user.id).first()
+        if not student:
+            student = Student(
+                name="Student One",
+                guardian_name="Guardian A",
+                guardian_contact="0712345678",
+                classroom_id=classroom.id,
+                user_id=student_user.id
             )
-            db.session.add(attendance)
+            db.session.add(student)
+            db.session.flush()
+            print("✅ Student profile created for existing user.")
+        else:
+            print("ℹ️ Student already exists.")
 
+    # 5. Sample Fee Payments
+    if not FeePayment.query.filter_by(student_id=student.id).first():
+        sample_payments = [
+            FeePayment(student_id=student.id, amount=5000, term="Term 1"),
+            FeePayment(student_id=student.id, amount=3000, term="Term 2"),
+        ]
+        db.session.add_all(sample_payments)
+        print("💰 Sample fee payments added.")
+    else:
+        print("ℹ️ Fee payments already exist for student1.")
+
+    # 6. Sample Attendance Records
+    if not AttendanceRecord.query.filter_by(student_id=student.id).first():
+        today = date.today()
+        week_days = [today - timedelta(days=i) for i in range(5)]  # Last 5 days
+
+        attendance_records = [
+            AttendanceRecord(student_id=student.id, teacher_id=teacher.id, date=d, status="Present" if i % 2 == 0 else "Absent")
+            for i, d in enumerate(reversed(week_days))
+        ]
+        db.session.add_all(attendance_records)
+        print("📋 Sample attendance records added.")
+    else:
+        print("ℹ️ Attendance already exists for student1.")
+
+    # ✅ Commit all changes
     db.session.commit()
-    print("Seeded attendance records")
+    print("🎉 Database seeded successfully with users, student, attendance, and fees.")
 
-    for student in students:
-        for term in ["Term 1", "Term 2"]:
-            fee = FeePayment(
-                student_id=student.id,
-                amount=random.randint(10000, 20000),
-                payment_date=fake.date_between(start_date='-90d', end_date='today'),
-                term=term
-            )
-            db.session.add(fee)
-
-    db.session.commit()
-    print("Seeded fee payments")
-
-    print("Database seeding complete.")
