@@ -1,4 +1,3 @@
-# seed.py
 
 from datetime import date, timedelta
 from app import create_app, db, bcrypt

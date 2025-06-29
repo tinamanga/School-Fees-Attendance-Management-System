@@ -1,4 +1,4 @@
-#!/home/vaal/Development/code/phase-4/code-challenges/School-Fees-Attendance-Management-System/venv/bin/python3
+#!/home/tina/Development/code/phase-4/project/School-Fees-Attendance-Management-System/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
