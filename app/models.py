@@ -1,6 +1,12 @@
 from app import db, bcrypt
 from datetime import datetime
 
+# Table for Many-to-Many
+student_subjects = db.Table('student_subjects',
+    db.Column('student_id', db.Integer, db.ForeignKey('students.id'), primary_key=True),
+    db.Column('subject_id', db.Integer, db.ForeignKey('subjects.id'), primary_key=True)
+)
+
 class User(db.Model):
     __tablename__ = 'users'
 
@@ -21,7 +27,6 @@ class User(db.Model):
     def __repr__(self):
         return f"<User {self.username}>"
 
-
 class Classroom(db.Model):
     __tablename__ = 'classrooms'
 
@@ -32,7 +37,6 @@ class Classroom(db.Model):
 
     def __repr__(self):
         return f"<Classroom {self.name}>"
-
 
 class Student(db.Model):
     __tablename__ = 'students'
@@ -49,9 +53,22 @@ class Student(db.Model):
     fee_payments = db.relationship('FeePayment', backref='student', lazy=True, cascade="all, delete")
     user = db.relationship("User", backref="student_profile")
 
+    # Many-to-Many: Student <-> Subject
+    subjects = db.relationship("Subject", secondary=student_subjects, back_populates="students")
+
     def __repr__(self):
         return f"<Student {self.name}>"
 
+class Subject(db.Model):
+    __tablename__ = 'subjects'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+
+    students = db.relationship("Student", secondary=student_subjects, back_populates="subjects")
+
+    def __repr__(self):
+        return f"<Subject {self.name}>"
 
 class AttendanceRecord(db.Model):
     __tablename__ = 'attendance_records'
@@ -65,7 +82,6 @@ class AttendanceRecord(db.Model):
     def __repr__(self):
         return f"<AttendanceRecord student_id={self.student_id} date={self.date} status={self.status}>"
 
-
 class FeePayment(db.Model):
     __tablename__ = 'fee_payments'
 
@@ -77,4 +93,3 @@ class FeePayment(db.Model):
 
     def __repr__(self):
         return f"<FeePayment student_id={self.student_id} amount={self.amount}>"
-
