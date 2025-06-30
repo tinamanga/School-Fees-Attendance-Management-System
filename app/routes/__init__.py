@@ -3,6 +3,7 @@ from app import db, bcrypt
 from app.models import Student, Classroom, User, FeePayment, AttendanceRecord
 from datetime import datetime, date
 
+
 routes = Blueprint("routes", __name__)
 
 
